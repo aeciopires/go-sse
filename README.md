@@ -6,10 +6,18 @@
 - [Introduction](#introduction)
 - [Architecture](#architecture)
   - [Features](#features)
+    - [SSE Protocol Compliance](#sse-protocol-compliance)
+    - [Application Features](#application-features)
     - [API Endpoints](#api-endpoints)
     - [Metrics Documentation](#metrics-documentation)
 - [Running using Docker](#running-using-docker)
+  - [Prerequisites](#prerequisites)
+  - [Build and Run](#build-and-run)
+  - [Using Docker Image](#using-docker-image)
 - [Running locally without Docker](#running-locally-without-docker)
+  - [Prerequisites](#prerequisites-1)
+  - [Installation and Execution](#installation-and-execution)
+  - [Using Makefile](#using-makefile)
 - [Build image](#build-image)
 - [Developers](#developers)
 - [License](#license)
@@ -109,6 +117,10 @@ docker-compose logs -f go-sse
 # Stop services
 docker-compose down
 ```
+
+![go-sse.png](images/app.png)
+
+![dash.png](images/dash.png)
 
 ## Using Docker Image
 
