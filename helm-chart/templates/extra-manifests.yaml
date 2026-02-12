@@ -1,0 +1,4 @@
+{{ range .Values.extraManifests }}
+---
+{{ include "go-sse.tools.render" (dict "value" . "context" $) }}
+{{ end }}

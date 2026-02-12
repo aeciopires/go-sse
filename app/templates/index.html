@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>go-sse - Server-Sent Events Testing</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🟢 go-sse - Server-Sent Events Testing</h1>
+            <p class="subtitle">Real-time streaming of data from server to browser</p>
+        </header>
+
+        <div class="content">
+            <section class="control-panel">
+                <h2>Connection Control</h2>
+                <button id="connectBtn" class="btn btn-primary" onclick="connectSSE()">Connect SSE</button>
+                <button id="disconnectBtn" class="btn btn-danger" onclick="disconnectSSE()" disabled>Disconnect SSE</button>
+                <span id="connectionStatus" class="status status-disconnected">● Disconnected</span>
+            </section>
+
+            <section class="metrics">
+                <h2>Live Metrics</h2>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-label">Total Events Received</div>
+                        <div class="metric-value" id="eventCount">0</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Current CPU Usage</div>
+                        <div class="metric-value" id="cpuUsage">--</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Current Memory Usage</div>
+                        <div class="metric-value" id="memoryUsage">--</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Last Update</div>
+                        <div class="metric-value" id="lastUpdate">--</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="events">
+                <h2>Event Stream</h2>
+                <div class="event-controls">
+                    <button class="btn btn-small" onclick="clearEvents()">Clear Events</button>
+                    <label>
+                        <input type="checkbox" id="autoScroll" checked>
+                        Auto-scroll
+                    </label>
+                </div>
+                <div class="event-stream" id="eventStream">
+                    <div class="event-placeholder">Waiting for SSE connection...</div>
+                </div>
+            </section>
+
+            <section class="info">
+                <h2>About Server-Sent Events (SSE)</h2>
+                <ul>
+                    <li><strong>Protocol:</strong> HTTP-based, unidirectional streaming</li>
+                    <li><strong>Connection:</strong> Persistent TCP connection (keep-alive)</li>
+                    <li><strong>Format:</strong> text/event-stream Content-Type</li>
+                    <li><strong>Caching:</strong> Disabled (Cache-Control: no-cache)</li>
+                    <li><strong>Compression:</strong> Not supported by spec</li>
+                    <li><strong>Buffering:</strong> Server-side flushing required</li>
+                    <li><strong>Auto-reconnect:</strong> Built-in browser support</li>
+                    <li><strong>Browser Support:</strong> All modern browsers</li>
+                </ul>
+            </section>
+
+            <section class="technical">
+                <h2>Technical Details</h2>
+                <div class="code-block">
+                    <pre>Required Headers:
+Content-Type: text/event-stream
+Cache-Control: no-cache
+Connection: keep-alive
+HTTP/1.1 200 OK
+
+Event Format:
+id: unique-event-id
+event: event-type
+data: event-data
+
+: This is a comment
+</pre>
+                </div>
+            </section>
+
+            <section class="links">
+                <h2>Resources</h2>
+                <ul>
+                    <li><a href="https://html.spec.whatwg.org/multipage/server-sent-events.html" target="_blank">HTML Living Standard - Server-Sent Events</a></li>
+                    <li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events" target="_blank">MDN Web Docs - Server-Sent Events</a></li>
+                    <li><a href="https://www.rfc-editor.org/rfc/rfc6797" target="_blank">RFC 6797 - HTTP Over TLS</a></li>
+                </ul>
+            </section>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
