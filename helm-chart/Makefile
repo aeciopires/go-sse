@@ -29,26 +29,27 @@ gen-docs:
 		$(HELM_DOCS_IMAGE) \
 		helm-docs
 
+
 # Install/upgrade chart in Kubernetes cluster
 install:
-	CMD="install --upgrade go-sse . \
+	helm upgrade --install go-sse . \
 		--namespace go-sse \
-		--create-namespace" $(MAKE) helm
+		--create-namespace
 
 # Uninstall chart from Kubernetes cluster
 uninstall:
-	CMD="uninstall go-sse \
-		--namespace go-sse" $(MAKE) helm
+	helm uninstall go-sse \
+		--namespace go-sse
 
 # Dry run install to see manifests
 dry-run:
-	CMD="install go-sse . \
+	helm install go-sse . \
 		--namespace go-sse \
 		--create-namespace \
 		--dry-run \
-		--debug" $(MAKE) helm
+		--debug
 
 # Template chart to see rendered manifests
 template:
-	CMD="template go-sse . \
-		--namespace go-sse" $(MAKE) helm
+	helm template go-sse . \
+		--namespace go-sse
