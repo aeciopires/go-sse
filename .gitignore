@@ -11,6 +11,41 @@
 *.sln.docstates
 *.env
 
+# Go
+bin/
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.so.*
+*.dylib
+# Test binary, built with `go test -c`
+*.test
+# Output of the go coverage tool
+*.out
+# Dependency directories
+vendor/
+go.sum
+
+# Docker
+.dockerignore
+
+# Helm
+.helm/
+helm-chart/.helm/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.settings/
+*.sublime-project
+*.sublime-workspace
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
