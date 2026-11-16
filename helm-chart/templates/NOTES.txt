@@ -22,3 +22,18 @@
 
 3. To view pod logs:
   kubectl logs -f deployment/{{ include "go-sse.fullname" . }} -n {{ .Release.Namespace }}
+
+4. Health checks used by the probes:
+  /livez  (liveness and startup)   /readyz (readiness)   /health (human-friendly status)
+
+5. Observability:
+  - Prometheus metrics: /metrics{{ if .Values.serviceMonitor.enabled }} (scraped by the ServiceMonitor){{ end }}
+  - JSON logs on stdout, level {{ .Values.logLevel }}
+  {{- if and .Values.otel.enabled .Values.otel.endpoint }}
+  - Traces and logs exported via OTLP to {{ .Values.otel.endpoint }}
+  {{- else }}
+  - OTLP export of traces/logs disabled (set otel.enabled=true and otel.endpoint)
+  {{- end }}
+  {{- if .Values.grafanaDashboard.enabled }}
+  - Grafana dashboard ConfigMap: {{ include "go-sse.fullname" . }}-dashboard
+  {{- end }}

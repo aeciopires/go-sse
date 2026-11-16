@@ -39,9 +39,18 @@ git checkout -b BRANCH_NAME
 git branch
 ```
 
-- Make your changes and tests to the new branch. See the section [Build image](README.md#build-image).
-- Update the [app/Makefile](app/Makefile) file. See the section [Build image](README.md#build-image).
-- Update the [app/CHANGELOG.md](app/CHANGELOG.md) file.
+- Make your changes and tests to the new branch. Before committing, run:
+
+```bash
+make check-deps          # tools installed? (make install-deps installs them)
+make -C app fmt lint test   # format, lint, unit tests (coverage must stay >= 90%)
+make -C app image-build scan   # build the image and scan it with Trivy
+make -C helm-chart lint gen-docs   # when the chart changes
+```
+
+- Go code must follow the [Modern Go Guidelines](https://github.com/JetBrains/go-modern-guidelines) for the Go version in [app/go.mod](app/go.mod). See [docs/08-development.md](docs/08-development.md).
+- App changes: bump `VERSION` in [app/Makefile](app/Makefile) and the image tag in [app/docker-compose.yaml](app/docker-compose.yaml), and update [app/CHANGELOG.md](app/CHANGELOG.md). See the section [Build image](README.md#build-image).
+- Chart changes: bump `version` in [helm-chart/Chart.yaml](helm-chart/Chart.yaml) and run `make -C helm-chart gen-docs`.
 - Commit the changes to the branch.
 - Push files to repository remote with command:
 

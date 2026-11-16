@@ -18,8 +18,8 @@ image:
   repository: aeciopires/go-sse
   # -- Pull policy of Docker image
   pullPolicy: IfNotPresent
-  # -- Docker image tag
-  tag: "1.0.0"
+  # -- Docker image tag (defaults to the chart appVersion)
+  tag: "2.0.0"
 
 # -- List of dockerconfig secrets names to use when pulling images
 imagePullSecrets: []
@@ -30,18 +30,57 @@ fullnameOverride: ""
 # -- Pod annotations configurations
 podAnnotations: {}
 
-# -- Pod security configurations
-podSecurityContext: {}
-  # fsGroup: 2000
+# -- Extra pod labels
+podLabels: {}
 
-# -- Security context configurations
-securityContext: {}
-  # capabilities:
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
+# -- Log level of the application: DEBUG, INFO, WARN or ERROR. Logs are written to stdout in JSON format.
+logLevel: INFO
+
+sse:
+  # -- Interval between "update" SSE events (Go duration)
+  eventInterval: 2s
+
+shutdown:
+  # -- Time the pod keeps serving after readiness turns false, so endpoints/load balancers stop routing traffic (Go duration)
+  delay: 5s
+  # -- Maximum time for in-flight requests to finish during shutdown (Go duration)
+  timeout: 15s
+
+# -- Seconds Kubernetes waits before killing the pod. Must be greater than shutdown.delay + shutdown.timeout
+terminationGracePeriodSeconds: 30
+
+# OpenTelemetry (traces and logs exported via OTLP/HTTP)
+otel:
+  # -- Enables OTLP export of traces and logs
+  enabled: false
+  # -- OTLP/HTTP endpoint, e.g. an OpenTelemetry Collector or Grafana Alloy (http://otel-collector.observability:4318)
+  endpoint: ""
+  # -- Service name reported in traces and logs (defaults to the chart name)
+  serviceName: ""
+  # -- Extra OTEL resource attributes (comma-separated key=value)
+  resourceAttributes: ""
+
+# -- Extra environment variables for the container
+env: []
+  # - name: OTEL_EXPORTER_OTLP_HEADERS
+  #   value: "authorization=Bearer TOKEN"
+
+# -- Pod security configurations
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001
+  seccompProfile:
+    type: RuntimeDefault
+
+# -- Container security context configurations
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
 
 service:
   # -- Type of service in Kubernetes cluster
@@ -109,8 +148,8 @@ resources:
     cpu: 200m
     memory: 256Mi
   requests:
-    cpu: 5m
-    memory: 5Mi
+    cpu: 10m
+    memory: 32Mi
 
 # -- Auto scaling configurations
 autoscaling:
@@ -120,16 +159,27 @@ autoscaling:
   targetCPUUtilizationPercentage: 80
   # targetMemoryUtilizationPercentage: 80
 
-# -- Health check on creation pod
-readinessProbe:
-  # -- Path of health check of application
-  path: /health
-  # -- Number of seconds after the container has started before readiness
-  initialDelaySeconds: 5
-  # -- Specifies that the kubelet should perform a liveness probe every N seconds
-  periodSeconds: 30
+# -- Startup probe: protects slow starts; liveness/readiness only run after it succeeds. Set to null to disable
+startupProbe:
+  # -- Path of the startup check
+  path: /livez
+  # -- Specifies that the kubelet should perform the probe every N seconds
+  periodSeconds: 2
   # -- Number of seconds after which the probe times out
-  timeoutSeconds: 5
+  timeoutSeconds: 2
+  # -- Number of failures before the container is restarted
+  failureThreshold: 30
+
+# -- Readiness probe: the pod receives traffic only while it returns 200 (fails during shutdown)
+readinessProbe:
+  # -- Path of readiness check of application
+  path: /readyz
+  # -- Number of seconds after the container has started before readiness
+  initialDelaySeconds: 0
+  # -- Specifies that the kubelet should perform a readiness probe every N seconds
+  periodSeconds: 5
+  # -- Number of seconds after which the probe times out
+  timeoutSeconds: 3
   # -- Minimum consecutive successes for the probe to be considered successful after having failed
   successThreshold: 1
   # -- When a probe fails, Kubernetes will try failureThreshold times before giving up.
@@ -137,16 +187,16 @@ readinessProbe:
   # In case of readiness probe the Pod will be marked Unready
   failureThreshold: 3
 
-# -- Healh check continuos
+# -- Liveness probe: the container is restarted when it fails
 livenessProbe:
-  # -- Path of health check of application
-  path: /health
+  # -- Path of liveness check of application
+  path: /livez
   # -- Number of seconds after the container has started before liveness
-  initialDelaySeconds: 5
+  initialDelaySeconds: 0
   # -- Specifies that the kubelet should perform a liveness probe every N seconds
-  periodSeconds: 30
+  periodSeconds: 10
   # -- Number of seconds after which the probe times out
-  timeoutSeconds: 5
+  timeoutSeconds: 3
   # -- Minimum consecutive successes for the probe to be considered successful after having failed
   successThreshold: 1
   # -- When a probe fails, Kubernetes will try failureThreshold times before giving up.
@@ -183,6 +233,18 @@ serviceMonitor:
 
 # -- Extra arbitrary Kubernetes manifests to deploy within the release
 extraManifests: []
+
+# -- Grafana dashboard (metrics, logs and traces) as a ConfigMap discovered by the Grafana sidecar
+grafanaDashboard:
+  enabled: false
+  # -- Namespace of the ConfigMap (defaults to the release namespace)
+  namespace: ""
+  # -- Labels used by the Grafana sidecar to discover dashboards
+  labels:
+    grafana_dashboard: "1"
+  # -- Annotations, e.g. the Grafana folder used by the sidecar
+  annotations:
+    grafana_folder: go-sse
 
 # -- Pod Disruption Budget configuration
 podDisruptionBudget:

@@ -5,9 +5,31 @@
 
 # Prerequisites
 
-- Install the kubectl, helm and helm-docs commands following the instructions of the file [REQUIREMENTS.md](../REQUIREMENTS.md).
+- **Helm 4** (Helm 3 is not supported). Check with `helm version` (must print `v4.x`).
+- Kubernetes 1.29+.
+- Install kubectl, helm and helm-docs following the instructions of the file [REQUIREMENTS.md](../REQUIREMENTS.md) (`make install-deps` installs the pinned versions with [mise](https://mise.jdx.dev)).
+
+# Features
+
+- Liveness (`/livez`), readiness (`/readyz`) and startup probes, with graceful shutdown (`shutdown.delay`, `shutdown.timeout`).
+- Hardened pod: non-root user, read-only root filesystem, all capabilities dropped, `RuntimeDefault` seccomp.
+- JSON logs on stdout with configurable `logLevel` (default `INFO`), ready for Loki.
+- Optional OpenTelemetry export of traces and logs (`otel.enabled`, `otel.endpoint`).
+- Optional Prometheus Operator `ServiceMonitor` and Grafana dashboard `ConfigMap` (metrics, logs and traces).
+
+Example enabling the observability integrations:
+
+```bash
+helm upgrade --install {{ template "chart.name" . }} {{ template "chart.name" . }}/ -n {{ template "chart.name" . }} --create-namespace \
+  --set serviceMonitor.enabled=true \
+  --set grafanaDashboard.enabled=true \
+  --set otel.enabled=true \
+  --set otel.endpoint=http://otel-collector.observability:4318
+```
 
 # Installing the Chart
+
+> The [Makefile](Makefile) wraps the commands below: `make lint`, `make template`, `make dry-run`, `make install`, `make uninstall`, `make gen-docs`.
 
 - Access a Kubernetes cluster.
 

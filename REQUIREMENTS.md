@@ -1,146 +1,147 @@
+# Requirements
+
 <!-- TOC -->
 
-- [General Packages](#general-packages)
-- [asdf](#asdf)
+- [Supported platforms](#supported-platforms)
+- [Quick install](#quick-install)
+- [Tool versions](#tool-versions)
 - [Docker](#docker)
-- [Install Go](#install-go)
-- [Helm](#helm)
-- [Helm Docs](#helm-docs)
-- [Install Kubectl](#install-kubectl)
+  - [Ubuntu](#ubuntu)
+  - [macOS](#macos)
+- [mise](#mise)
+- [Manual installation details](#manual-installation-details)
+  - [Base packages](#base-packages)
+  - [Tools managed by mise](#tools-managed-by-mise)
+- [Troubleshooting](#troubleshooting)
 
 <!-- TOC -->
 
-# General Packages
+# Supported platforms
 
-Install the follow packages.
+| OS | Versions | Architectures |
+|----|----------|---------------|
+| Ubuntu | 22.04, 24.04, 26.04 | amd64 |
+| macOS | current releases | amd64 (Intel), arm64 (Apple Silicon) |
 
-Debian/Ubuntu:
-
-```bash
-sudo apt-get install -y vim git make curl net-tools acl pkg-config
-```
-
-# asdf
-
-> Attention!!!
-> To update ``asdf``, ONLY use the following command. If you try to reinstall or update by changing the version in the following commands, it will be necessary to reinstall all plugins/commands installed before, so it is very important to back up the ``$HOME/.asdf`` directory.
+# Quick install
 
 ```bash
-asdf update
+# 1. Install Docker and Docker Compose (see the Docker section below)
+# 2. Install everything else:
+make install-deps
+# 3. Verify:
+make check-deps
 ```
 
-Run the following commands:
+`make install-deps` ([scripts/install-deps.sh](scripts/install-deps.sh)):
 
-```bash
-ASDF_VERSION="v0.15.0"
-git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch $ASDF_VERSION
+1. Ubuntu: installs `build-essential ca-certificates curl git gnupg make tar gzip unzip` with `apt` (`gcc` is needed by `go test -race`).
+   macOS: checks the Xcode Command Line Tools (starts the installer if missing).
+2. Installs [mise](https://mise.jdx.dev) if missing (Homebrew on macOS when available, otherwise `https://mise.run`).
+3. Runs `mise install` to install the tools pinned in [mise.toml](mise.toml).
 
-# Adicionando no $HOME/.bashrc
-echo ". \"\$HOME/.asdf/asdf.sh\"" >> ~/.bashrc
-echo ". \"\$HOME/.asdf/completions/asdf.bash\"" >> ~/.bashrc
-source ~/.bashrc
-```
+`make check-deps` ([scripts/check-deps.sh](scripts/check-deps.sh)) checks the base packages, Docker, Docker Compose, mise and every pinned tool, and exits with code `1` if anything is missing.
 
-Reference: https://asdf-vm.com/guide/introduction.html
+The same targets are available in `app/` and `helm-chart/` (`make -C app check-deps`).
+
+# Tool versions
+
+Pinned in [mise.toml](mise.toml):
+
+| Tool | Version | Used for |
+|------|---------|----------|
+| [Go](https://go.dev) | 1.27.4 | building and testing the app |
+| [Helm](https://helm.sh) | 4.3.2 | deploying the chart (**Helm 3 is not supported**) |
+| [helm-docs](https://github.com/norwoodj/helm-docs) | 1.14.2 | generating `helm-chart/README.md` |
+| [kubectl](https://kubernetes.io/docs/reference/kubectl/) | 1.37.2 | talking to Kubernetes |
+| [Trivy](https://trivy.dev) | 0.76.2 | scanning the Docker image and manifests |
+| [golangci-lint](https://golangci-lint.run) | 2.15.0 | Go linting |
+
+Container images used by `app/docker-compose.yaml`:
+
+| Image | Version |
+|-------|---------|
+| `golang` (builder) / `alpine` (runtime) | 1.27.4-alpine3.24 / 3.24.4 |
+| `grafana/grafana` | 13.3.1 |
+| `grafana/loki` | 3.7.10 |
+| `grafana/tempo` | 3.1.1 |
+| `prom/prometheus` | v3.16.0 |
+| `otel/opentelemetry-collector-contrib` | 0.165.0 |
+| `jaegertracing/jaeger` | 2.23.0 |
 
 # Docker
 
-Install Docker following commands.
+Docker Engine and the Docker Compose plugin are **not** installed by `make install-deps`.
+
+## Ubuntu
 
 ```bash
-curl -fsSL https://get.docker.com -o get-docker.sh;
-sudo sh get-docker.sh;
-# Using docker without sudo
-sudo usermod -aG docker $USER;
-sudo setfacl -m user:$USER:rw /var/run/docker.sock
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+# Use docker without sudo (log out and in again afterwards)
+sudo usermod -aG docker "$USER"
+docker compose version
 ```
 
-Reference: https://docs.docker.com/engine/install/linux-postinstall/#configure-docker-to-start-on-boot
+Reference: https://docs.docker.com/engine/install/ubuntu/ and https://docs.docker.com/engine/install/linux-postinstall/
 
-For more information about Docker Compose visit:
+## macOS
 
-- https://docs.docker.com
-- http://blog.aeciopires.com/primeiros-passos-com-docker
+Install [Docker Desktop](https://docs.docker.com/desktop/setup/install/mac-install/) (choose *Apple Silicon* or *Intel chip*). It includes Docker Compose.
 
-# Install Go
+For more information: https://docs.docker.com and http://blog.aeciopires.com/primeiros-passos-com-docker
 
-Using asdf:
+# mise
+
+[mise](https://mise.jdx.dev) installs and switches tool versions per project (it replaces asdf in this repository). After `make install-deps`, activate it in your shell so the pinned versions are used automatically inside the repository:
 
 ```bash
-asdf plugin add golang https://github.com/asdf-community/asdf-golang.git
-asdf install golang 1.25.0
-asdf global golang 1.25.0
-asdf reshim golang
+# bash
+echo 'eval "$(mise activate bash)"' >> ~/.bashrc
+# zsh (macOS default)
+echo 'eval "$(mise activate zsh)"' >> ~/.zshrc
 ```
 
-Verify:
+Useful commands:
 
 ```bash
-go version
+mise install          # install the versions from mise.toml
+mise ls --local       # show the versions in use
+mise upgrade          # upgrade within the pinned constraints
+mise exec -- helm version   # run a command with the pinned tools without activation
 ```
 
-Reference: https://go.dev/doc/install
+# Manual installation details
 
-# Helm
+## Base packages
 
-Install Helm:
+Ubuntu:
 
 ```bash
-VERSION="3.19.0"
-
-asdf plugin list all | grep helm
-asdf plugin add helm https://github.com/Antiarchitect/asdf-helm.git
-asdf latest helm
-
-asdf install helm $VERSION
-asdf list helm
-
-asdf global helm $VERSION
-asdf list helm
+sudo apt-get update
+sudo apt-get install -y build-essential ca-certificates curl git gnupg make tar gzip unzip
 ```
 
-Reference: https://helm.sh/docs/intro/install/
-
-# Helm Docs
-
-Install helm-docs:
+macOS:
 
 ```bash
-VERSION="1.14.2"
-
-asdf plugin list all | grep helm-docs
-asdf plugin add helm-docs https://github.com/sudermanjr/asdf-helm-docs.git
-asdf latest helm-docs
-
-asdf install helm-docs $VERSION
-asdf list helm-docs
-
-asdf global helm-docs $VERSION
-asdf list helm-docs
+xcode-select --install
 ```
 
-Documentation: https://github.com/norwoodj/helm-docs 
-
-The documentation generated by ``helm-docs`` is based on the contents of the ``values.yaml``, ``README.md.gotmpl`` and ``Chart.yaml`` file. It tries to overwrite the contents of the ``README.md`` file within the chart directory.
-
-# Install Kubectl
-
-Simple shell function for Kubectl installation in Linux 64 bits. Copy and paste this code:
+## Tools managed by mise
 
 ```bash
-VERSION_OPTION_1="1.34.3"
-
-asdf plugin list all | grep kubectl
-asdf plugin add kubectl https://github.com/asdf-community/asdf-kubectl.git
-asdf latest kubectl
-
-asdf install kubectl $VERSION_OPTION_1
-asdf list kubectl
-
-asdf global kubectl $VERSION_OPTION_1
-asdf list kubectl
+curl -fsSL https://mise.run | sh     # or: brew install mise
+cd go-sse
+mise trust
+mise install
 ```
 
-Kubectl documentation:
+To update a tool, change its version in `mise.toml` and run `mise install`.
 
-https://kubernetes.io/docs/reference/kubectl/overview/
+# Troubleshooting
+
+- **`Helm 4 is required (found: 'v3...')`**: another Helm is earlier in your `PATH`. Activate mise in your shell or run `mise exec -- make install`.
+- **`go test -race` fails with `cgo` errors on Ubuntu**: install `build-essential` (`make install-deps` does it).
+- **Docker permission denied**: add your user to the `docker` group and log in again.
+- **macOS ships GNU Make 3.81**: the Makefiles are compatible with it; no need to install a newer make.

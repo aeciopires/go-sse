@@ -1,0 +1,8 @@
+bin/
+coverage.*
+*.out
+observability/
+dashboard/
+docker-compose.yaml
+Makefile
+*.md

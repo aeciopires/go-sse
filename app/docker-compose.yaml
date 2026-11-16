@@ -1,55 +1,145 @@
+# go-sse + full observability stack (metrics, logs and traces).
+#
+#   go-sse ──OTLP (traces, logs)──▶ OpenTelemetry Collector ──▶ Tempo   (traces)
+#     │                                                     ├──▶ Jaeger  (traces)
+#     │                                                     └──▶ Loki    (logs)
+#     └──/metrics◀── scrape ── Prometheus ◀── remote write ── Tempo (span metrics)
+#                                  ▲
+#                     Grafana ─────┴── queries Prometheus, Loki, Tempo, Jaeger
+#
+# Usage:  docker compose up -d --build
+#   go-sse      http://localhost:8080
+#   Grafana     http://localhost:3000  (admin / admin) -> Dashboards -> go-sse
+#   Prometheus  http://localhost:9090
+#   Jaeger UI   http://localhost:16686
+#   Tempo API   http://localhost:3200
+#   Loki API    http://localhost:3100
+
+name: go-sse
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: "3"
+
 services:
   go-sse:
     container_name: go-sse
     build:
-      context: '.'
-    image: aeciopires/go-sse:1.0.0
+      context: .
+      args:
+        VERSION: 2.0.0
+    image: aeciopires/go-sse:2.0.0
     ports:
       - "8080:8080"
-    networks:
-      - mynet
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 5s
+    environment:
+      LOG_LEVEL: INFO
+      OTEL_SERVICE_NAME: go-sse
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_RESOURCE_ATTRIBUTES: deployment.environment.name=docker-compose
+      SHUTDOWN_DELAY: 0s
+    depends_on:
+      otel-collector:
+        condition: service_started
+    restart: unless-stopped
+    logging: *default-logging
+    networks: [observability]
+
+  otel-collector:
+    container_name: otel-collector
+    image: otel/opentelemetry-collector-contrib:0.165.0
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    volumes:
+      - ./observability/otel-collector/config.yaml:/etc/otelcol-contrib/config.yaml:ro
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+    depends_on: [tempo, jaeger, loki]
+    restart: unless-stopped
+    logging: *default-logging
+    networks: [observability]
+
+  tempo:
+    container_name: tempo
+    image: grafana/tempo:3.1.1
+    command: ["-target=all", "-config.file=/etc/tempo/config.yaml"]
+    user: "0"  # writes to the named volume
+    volumes:
+      - ./observability/tempo/config.yaml:/etc/tempo/config.yaml:ro
+      - tempo-data:/var/tempo
+    ports:
+      - "3200:3200"
+    restart: unless-stopped
+    logging: *default-logging
+    networks: [observability]
+
+  jaeger:
+    container_name: jaeger
+    image: jaegertracing/jaeger:2.23.0
+    ports:
+      - "16686:16686" # Jaeger UI
+    restart: unless-stopped
+    logging: *default-logging
+    networks: [observability]
+
+  loki:
+    container_name: loki
+    image: grafana/loki:3.7.10
+    command: ["-config.file=/etc/loki/config.yaml"]
+    user: "0"  # writes to the named volume
+    volumes:
+      - ./observability/loki/config.yaml:/etc/loki/config.yaml:ro
+      - loki-data:/loki
+    ports:
+      - "3100:3100"
+    restart: unless-stopped
+    logging: *default-logging
+    networks: [observability]
 
   prometheus:
-    image: prom/prometheus
     container_name: prometheus
+    image: prom/prometheus:v3.16.0
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-remote-write-receiver
+      - --enable-feature=exemplar-storage
+      - --enable-feature=native-histograms
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
     ports:
       - "9090:9090"
-    depends_on:
-      - go-sse
-    restart: always
-    networks:
-      - mynet
+    restart: unless-stopped
+    logging: *default-logging
+    networks: [observability]
 
   grafana:
-    image: grafana/grafana-oss
     container_name: grafana
+    image: grafana/grafana:13.3.1
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_DEFAULT_THEME: dark
+      GF_FEATURE_TOGGLES_ENABLE: traceqlEditor
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./dashboard:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
     ports:
       - "3000:3000"
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-    depends_on:
-      - prometheus
-    restart: always
-    networks:
-      - mynet
+    depends_on: [prometheus, loki, tempo, jaeger]
+    restart: unless-stopped
+    logging: *default-logging
+    networks: [observability]
+
+volumes:
+  tempo-data:
+  loki-data:
+  prometheus-data:
+  grafana-data:
 
 networks:
-  mynet:
-    driver: "bridge"
-
-####
-# To set up monitoring with Prometheus and Grafana, follow these steps:
-# Open Grafana at http://localhost:3000 (User: admin, Pass: admin).
-# Go to Connections -> Data Sources and add Prometheus.
-# Set the URL to http://prometheus:9090.
-# Go to Dashboards -> Import and paste the JSON provided in dashboard/go-sse-grafana.json.
-# Click "Load" and then "Import" to add the dashboard.
-####
+  observability:
+    driver: bridge

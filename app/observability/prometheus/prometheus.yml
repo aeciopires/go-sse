@@ -1,0 +1,33 @@
+# Prometheus configuration used by docker-compose.yaml.
+# Prometheus is started with:
+#   --web.enable-remote-write-receiver  Tempo's metrics-generator pushes span
+#                                       metrics and service graphs here
+#   --enable-feature=exemplar-storage   keeps exemplars (metric -> trace links)
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: go-sse
+    scrape_interval: 5s
+    metrics_path: /metrics
+    # OpenMetrics is required to receive exemplars.
+    scrape_protocols: [OpenMetricsText1.0.0, PrometheusText0.0.4]
+    static_configs:
+      - targets: ['go-sse:8080']
+
+  - job_name: otel-collector
+    static_configs:
+      - targets: ['otel-collector:8888']
+
+  - job_name: tempo
+    static_configs:
+      - targets: ['tempo:3200']
+
+  - job_name: loki
+    static_configs:
+      - targets: ['loki:3100']
+
+  - job_name: prometheus
+    static_configs:
+      - targets: ['localhost:9090']

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark light">
+    <meta name="description" content="go-sse: test and learn the Server-Sent Events protocol">
+    <title>go-sse · Server-Sent Events</title>
+    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+    <script src="/static/theme.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap">
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="/static/app.js" defer></script>
+</head>
+<body>
+<div class="layout">
+    <!-- Navigation rail (M3) -->
+    <nav class="rail" aria-label="Primary">
+        <a class="rail-fab" href="#overview" aria-label="go-sse home">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 21h-1l1-7H7.5c-.58 0-.57-.32-.38-.66.19-.34.05-.08.07-.12C8.48 10.94 10.42 7.54 13 3h1l-1 7h3.5c.49 0 .56.33.47.51l-.07.15C12.96 17.55 11 21 11 21z"/></svg>
+        </a>
+        <a class="rail-item" href="#overview" data-section="overview">
+            <span class="rail-indicator"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></span>
+            <span class="rail-label">Home</span>
+        </a>
+        <a class="rail-item" href="#metrics" data-section="metrics">
+            <span class="rail-indicator"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/></svg></span>
+            <span class="rail-label">Metrics</span>
+        </a>
+        <a class="rail-item" href="#events" data-section="events">
+            <span class="rail-indicator"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg></span>
+            <span class="rail-label">Events</span>
+        </a>
+        <a class="rail-item" href="#learn" data-section="learn">
+            <span class="rail-indicator"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg></span>
+            <span class="rail-label">Learn</span>
+        </a>
+        <a class="rail-item" href="#technical" data-section="technical">
+            <span class="rail-indicator"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.4 16.6 4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0 4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg></span>
+            <span class="rail-label">Protocol</span>
+        </a>
+        <a class="rail-item" href="#resources" data-section="resources">
+            <span class="rail-indicator"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg></span>
+            <span class="rail-label">Resources</span>
+        </a>
+
+        <div class="rail-bottom">
+            <button id="themeToggle" class="icon-button outlined" type="button" aria-label="Switch to light mode" title="Switch to light mode">
+                <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/></svg>
+                <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/></svg>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Navigation drawer (M3, standard) -->
+    <aside class="drawer" aria-label="Sections">
+        <a class="drawer-headline" href="#overview">go-sse overview</a>
+        <a class="drawer-item" href="#connection" data-section="connection">Connection</a>
+        <a class="drawer-item" href="#metrics" data-section="metrics">Live metrics</a>
+        <a class="drawer-item" href="#events" data-section="events">Event stream</a>
+        <a class="drawer-item" href="#learn" data-section="learn">About SSE</a>
+        <a class="drawer-item" href="#technical" data-section="technical">Technical details</a>
+        <a class="drawer-item" href="#resources" data-section="resources">Resources</a>
+        <div class="drawer-divider"></div>
+        <a class="drawer-item" href="/metrics" target="_blank" rel="noopener">Prometheus metrics</a>
+        <a class="drawer-item" href="/health" target="_blank" rel="noopener">Health check</a>
+    </aside>
+
+    <main class="content">
+        <section class="hero" id="overview">
+            <h1 class="display-large">go-sse</h1>
+            <p class="title-large hero-subtitle">Real-time streaming of data from server to browser using Server-Sent Events</p>
+            <div class="chip-row">
+                <span class="chip">v {{.Version}}</span>
+                <span id="connectionStatus" class="chip chip-status" role="status" aria-live="polite">
+                    <span class="status-dot" aria-hidden="true"></span><span class="status-text">Disconnected</span>
+                </span>
+            </div>
+        </section>
+
+        <section class="toolbar" id="connection" aria-label="Connection control">
+            <button id="connectBtn" class="btn btn-filled" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+                Connect SSE
+            </button>
+            <button id="disconnectBtn" class="btn btn-tonal" type="button" disabled>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6h12v12H6z"/></svg>
+                Disconnect SSE
+            </button>
+        </section>
+
+        <section class="section" id="metrics">
+            <h2 class="headline-small">Live metrics</h2>
+            <div class="metrics-grid">
+                <div class="card metric-card">
+                    <div class="label-large">Events received</div>
+                    <div class="display-small" id="eventCount">0</div>
+                </div>
+                <div class="card metric-card">
+                    <div class="label-large">CPU usage <span class="label-small">(simulated)</span></div>
+                    <div class="display-small" id="cpuUsage">--</div>
+                </div>
+                <div class="card metric-card">
+                    <div class="label-large">Memory usage <span class="label-small">(simulated)</span></div>
+                    <div class="display-small" id="memoryUsage">--</div>
+                </div>
+                <div class="card metric-card">
+                    <div class="label-large">Active connections</div>
+                    <div class="display-small" id="connections">--</div>
+                </div>
+                <div class="card metric-card">
+                    <div class="label-large">Last update</div>
+                    <div class="display-small" id="lastUpdate">--</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section" id="events">
+            <div class="section-header">
+                <h2 class="headline-small">Event stream</h2>
+                <div class="section-actions">
+                    <label class="switch">
+                        <input type="checkbox" id="autoScroll" role="switch" checked>
+                        <span class="switch-track"><span class="switch-handle"></span></span>
+                        <span class="label-large">Auto-scroll</span>
+                    </label>
+                    <button id="clearBtn" class="btn btn-outlined" type="button">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                        Clear
+                    </button>
+                </div>
+            </div>
+            <div class="event-stream" id="eventStream" aria-live="off">
+                <div class="event-placeholder">Waiting for SSE connection…</div>
+            </div>
+        </section>
+
+        <section class="section" id="learn">
+            <h2 class="headline-small">About Server-Sent Events (SSE)</h2>
+            <ul class="feature-list">
+                <li><strong>Protocol:</strong> HTTP-based, unidirectional streaming (server → browser)</li>
+                <li><strong>Connection:</strong> persistent TCP connection (keep-alive)</li>
+                <li><strong>Format:</strong> <code>text/event-stream</code> Content-Type</li>
+                <li><strong>Caching:</strong> disabled (<code>Cache-Control: no-cache</code>)</li>
+                <li><strong>Buffering:</strong> server-side flushing after every event</li>
+                <li><strong>Auto-reconnect:</strong> built into the browser, resumes with <code>Last-Event-ID</code></li>
+                <li><strong>Browser support:</strong> all modern browsers (<code>EventSource</code> API)</li>
+            </ul>
+        </section>
+
+        <section class="section" id="technical">
+            <h2 class="headline-small">Technical details</h2>
+            <pre class="code-block">HTTP/1.1 200 OK
+Content-Type: text/event-stream
+Cache-Control: no-cache
+Connection: keep-alive
+
+retry: 3000
+id: 1
+event: welcome
+data: {"message":"Connected to go-sse Server-Sent Events"}
+
+: lines starting with a colon are comments</pre>
+        </section>
+
+        <section class="section" id="resources">
+            <h2 class="headline-small">Resources</h2>
+            <ul class="link-list">
+                <li><a href="https://html.spec.whatwg.org/multipage/server-sent-events.html" target="_blank" rel="noopener">HTML Living Standard – Server-Sent Events</a></li>
+                <li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events" target="_blank" rel="noopener">MDN Web Docs – Server-Sent Events</a></li>
+                <li><a href="https://github.com/aeciopires/go-sse" target="_blank" rel="noopener">go-sse on GitHub</a></li>
+            </ul>
+        </section>
+    </main>
+</div>
+</body>
+</html>
