@@ -26,14 +26,14 @@ bin/
 *.out
 # Dependency directories
 vendor/
-go.sum
+# NOTE: go.sum must be committed (reproducible builds)
+coverage.html
 
-# Docker
-.dockerignore
 
 # Helm
 .helm/
 helm-chart/.helm/
+helm-chart/packages/
 
 # IDE
 .idea/

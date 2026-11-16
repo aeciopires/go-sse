@@ -16,7 +16,7 @@
 - [Kubernetes (Helm 4)](#kubernetes-helm-4)
 - [Build image](#build-image)
 - [Documentation](#documentation)
-- [Developers](#developers)
+- [Developer](#developer)
 - [License](#license)
 
 <!-- TOC -->
@@ -187,9 +187,9 @@ make image-build scan
 | [docs/07-frontend.md](docs/07-frontend.md) | Frontend, Material Design 3 and themes |
 | [docs/08-development.md](docs/08-development.md) | Tools, tests, coverage, lint and Trivy |
 
-# Developers
+# Developer
 
-See the [CONTRIBUTING.md](CONTRIBUTING.md) file for development guidelines and instructions on how to contribute to this project.
+- Aecio Pires - [https://linktr.ee/aeciopires](https://linktr.ee/aeciopires)
 
 # License
 
